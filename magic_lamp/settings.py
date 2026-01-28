@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'home',
-
+    'services',
 ]
 
 MIDDLEWARE = [
@@ -74,6 +74,7 @@ SWAGGER_SETTINGS = {
 CORS_ALLOWED_ORIGINS = [
    
     "http://localhost:3000",
+    "http://localhost:5174",
     "http://127.0.0.1:8000",
 
 ]
@@ -96,7 +97,7 @@ CACHES = {
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR,'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

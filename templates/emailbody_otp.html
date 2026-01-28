@@ -1,0 +1,37 @@
+{% autoescape off %}
+<html>
+  <body style="font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; padding: 20px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+      <h2 style="color: #333333; text-align: center;">Welcome to Magic Lamp </h2>
+      
+      <p style="font-size: 16px; color: #555555;">
+        Hi <strong>{{ user.first_name }}</strong>,
+      </p>
+      
+      <p style="font-size: 16px; color: #555555; line-height: 1.5;">
+        Your OTP to LOGIN your <strong>Magic Lamp</strong> account is:
+      </p>
+
+      <div style="text-align: center; margin: 20px 0;">
+        <span style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 10px 20px; font-size: 18px; border-radius: 5px;">
+          {{ token }}
+        </span>
+      </div>
+
+      <p style="font-size: 16px; color: #ff0000; text-align: center;">
+        <strong>Please do not share this OTP with anyone.</strong>
+      </p>
+
+      <p style="font-size: 16px; color: #555555; line-height: 1.5;">
+        Happy !<br>
+        The Magic Lamp Team
+      </p>
+
+      <footer style="text-align: center; margin-top: 30px; font-size: 12px; color: #999999;">
+        <p>Magic Lamp - Your Trusted Service PARTNER</p>
+        <p style="font-size: 12px;">&copy; {{ current_year }} NEO TOKYO. All Rights Reserved.</p>
+      </footer>
+    </div>
+  </body>
+</html>
+{% endautoescape %}
