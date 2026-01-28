@@ -362,7 +362,7 @@ def generate_and_send_otp(identifier):
             email = EmailMessage(mail_subject, message, to=[email])
             email.content_subtype = "html"
             email.send(fail_silently=True)
-            return True, "OTP sent to your email successfully."
+            return True, f"OTP sent to your email successfully.OTP - {otp}"
         except Exception as e:
             return False, f"Failed to send OTP via email: {str(e)}"
 
