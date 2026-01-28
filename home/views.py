@@ -271,7 +271,7 @@ def generate_otp(request):
         email.send(fail_silently=True)
 
     return Response(
-        {'message': 'OTP sent successfully.'},
+        {'message': 'OTP sent successfully.',"OTP":otp},
         status=status.HTTP_200_OK
     )
 
