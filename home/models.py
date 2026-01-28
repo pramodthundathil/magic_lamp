@@ -78,7 +78,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
         
     def __str__(self):
-        return str(self.first_name + " " + str(self.last_name))
+        return str(self.email)
 
 
 class DeliveryAddress(models.Model):
