@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from .models import ServiceCategory, ServiceSubCategory, ServiceRequest
+from django.core.mail import EmailMessage
+from django.conf import settings
 from .serializers import (
     ServiceCategorySerializer, 
     ServiceSubCategorySerializer,
@@ -80,7 +82,38 @@ class CustomerServiceRequestView(views.APIView):
     def post(self, request):
         serializer = ServiceRequestCreateSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            serializer.save()
+            service_request = serializer.save()
+
+            # Send Email to Admin
+            try:
+                mail_subject = f"New Service Request: {service_request.request_id}"
+                
+                # HTML Message
+                html_message = f"""
+                <html>
+                    <body>
+                        <h2>New Service Request Received!</h2>
+                        <p><strong>ID:</strong> {service_request.request_id}</p>
+                        <p><strong>Category:</strong> {service_request.category.name if service_request.category else 'N/A'}</p>
+                        <p><strong>SubCategory:</strong> {service_request.subcategory.name if service_request.subcategory else 'N/A'}</p>
+                        <p><strong>Customer:</strong> {service_request.customer_name or 'Guest'}</p>
+                        <p><strong>Mobile:</strong> {service_request.mobile_number}</p>
+                        <p><strong>Address:</strong> {service_request.address}</p>
+                        <br>
+                        <p>Please login to the admin dashboard for more details.</p>
+                    </body>
+                </html>
+                """
+
+                to_email = ['gopinath.pramod@gmail.com']
+                email = EmailMessage(mail_subject, html_message, to=to_email)
+                email.content_subtype = "html"  # Main content is now text/html
+                email.send(fail_silently=False)
+                print(f"Email sent successfully to {to_email}")
+            except Exception as e:
+                print(f"Failed to send email: {e}")
+
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
