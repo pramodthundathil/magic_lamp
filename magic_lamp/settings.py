@@ -265,7 +265,8 @@ EMAIL_HOST_USER = "cepcentre007@gmail.com"
 EMAIL_HOST_PASSWORD = 'sjcapvmtthbkdhuh'
 
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = "69145476126-31qfbt7ehrgopm6uka09end6hchl2e4j.apps.googleusercontent.com"       # Google Client ID
+# SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = "69145476126-31qfbt7ehrgopm6uka09end6hchl2e4j.apps.googleusercontent.com"       # Google Client ID
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = "752728323430-85geretfsn5f7ino654hcqolnrm955c3.apps.googleusercontent.com"
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = "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" # Google Client Secret
 SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ['email', 'profile']    # Permissions to request
 
