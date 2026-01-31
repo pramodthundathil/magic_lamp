@@ -832,4 +832,65 @@ class DeliveryAddressViewSet(viewsets.ModelViewSet):
     
 
 
+
   
+from .models import AdminEmails
+from .serializers import AdminEmailsSerializer
+from .permissions import IsSuperUserForUpdateDeletePatch
+
+
+class AdminEmailsViewSet(viewsets.ModelViewSet):
+    queryset = AdminEmails.objects.all()
+    serializer_class = AdminEmailsSerializer
+    permission_classes = [IsAuthenticated, IsSuperUserForUpdateDeletePatch]
+
+    @swagger_auto_schema(
+        operation_summary="List all Admin Emails",
+        operation_description="Retrieve a list of all admin emails. Accessible to all authenticated users.",
+        tags=['Admin Emails']
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Admin Email",
+        operation_description="Create a new admin email. Accessible to all authenticated users.",
+        tags=['Admin Emails']
+    )
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Retrieve Admin Email",
+        operation_description="Retrieve details of a specific admin email. Accessible to all authenticated users.",
+        tags=['Admin Emails']
+    )
+    def retrieve(self, request, *args, **kwargs):
+        return super().retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update Admin Email",
+        operation_description="Update an existing admin email. **Restricted to Superusers only.**",
+        tags=['Admin Emails'],
+        responses={200: AdminEmailsSerializer, 403: "Forbidden: Superuser required"}
+    )
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Partial Update Admin Email",
+        operation_description="Partially update an existing admin email. **Restricted to Superusers only.**",
+        tags=['Admin Emails'],
+        responses={200: AdminEmailsSerializer, 403: "Forbidden: Superuser required"}
+    )
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Delete Admin Email",
+        operation_description="Delete an admin email. **Restricted to Superusers only.**",
+        tags=['Admin Emails'],
+        responses={204: "No Content", 403: "Forbidden: Superuser required"}
+    )
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)

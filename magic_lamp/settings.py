@@ -274,7 +274,5 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ['email', 'profile']    # Permissions to reque
 SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'http://localhost:8000/auth/google/callback/'
 
 # Google OAuth2 settings
-# GOOGLE_CLIENT_ID = "752728323430-85geretfsn5f7ino654hcqolnrm955c3.apps.googleusercontent.com"
-
 GOOGLE_CLIENT_ID = "752728323430-rig6042403v1vriivoh0hmffsl3nv4bs.apps.googleusercontent.com"
 

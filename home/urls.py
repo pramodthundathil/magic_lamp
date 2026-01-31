@@ -32,6 +32,7 @@ urlpatterns = [
     
 ]
 
+router.register(r'admin-emails', views.AdminEmailsViewSet, basename='admin-emails')
 router.register(r'delivery-addresses', views.DeliveryAddressViewSet, basename='delivery-address')
 
 urlpatterns +=router.urls

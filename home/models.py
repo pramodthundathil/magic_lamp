@@ -104,3 +104,16 @@ class DeliveryAddress(models.Model):
         return f"{(self.user.first_name)} - Delivery Address {self.delivery_person_name}"
     
 
+
+class AdminEmails(models.Model):
+    email = models.EmailField(unique=True)
+    priority = models.IntegerField(default=1, choices=(
+        (1, "Admin"),
+        (2, "Semi Admin"),
+        (3, "staff"),
+        (4, "user"),
+        (5, "All"),
+    ))
+    
+    def __str__(self):
+        return self.email

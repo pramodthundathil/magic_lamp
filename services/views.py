@@ -14,6 +14,9 @@ from .serializers import (
     ServiceRequestAdminSerializer
 )
 from rest_framework.permissions import IsAuthenticated
+import threading
+from home.models import AdminEmails
+
 # Attempt to import IsAdmin from home, else define it
 try:
     from home.views import IsAdmin
@@ -21,6 +24,44 @@ except ImportError:
     class IsAdmin(permissions.BasePermission):
         def has_permission(self, request, view):
             return request.user and request.user.is_authenticated and getattr(request.user, 'role', '') == 'admin'
+
+def send_admin_email_async(service_request):
+    """
+    Sends email to high-priority admins asynchronously.
+    """
+    try:
+        # Fetch emails with priority 1 (Admin) and 2 (Semi Admin)
+        admin_emails = list(AdminEmails.objects.filter(priority__in=[1, 2]).values_list('email', flat=True))
+        
+        if not admin_emails:
+            print("No high-priority admin emails found.")
+            return
+
+        mail_subject = f"New Service Request: {service_request.request_id}"
+        
+        # HTML Message
+        html_message = f"""
+        <html>
+            <body>
+                <h2>New Service Request Received!</h2>
+                <p><strong>ID:</strong> {service_request.request_id}</p>
+                <p><strong>Category:</strong> {service_request.category.name if service_request.category else 'N/A'}</p>
+                <p><strong>SubCategory:</strong> {service_request.subcategory.name if service_request.subcategory else 'N/A'}</p>
+                <p><strong>Customer:</strong> {service_request.customer_name or 'Guest'}</p>
+                <p><strong>Mobile:</strong> {service_request.mobile_number}</p>
+                <p><strong>Address:</strong> {service_request.address}</p>
+                <br>
+                <p>Please login to the admin dashboard for more details.</p>
+            </body>
+        </html>
+        """
+
+        email = EmailMessage(mail_subject, html_message, to=admin_emails)
+        email.content_subtype = "html"
+        email.send(fail_silently=False)
+        print(f"Email sent successfully to {admin_emails}")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
 
 # --- Category Views ---
 
@@ -84,35 +125,9 @@ class CustomerServiceRequestView(views.APIView):
         if serializer.is_valid():
             service_request = serializer.save()
 
-            # Send Email to Admin
-            try:
-                mail_subject = f"New Service Request: {service_request.request_id}"
-                
-                # HTML Message
-                html_message = f"""
-                <html>
-                    <body>
-                        <h2>New Service Request Received!</h2>
-                        <p><strong>ID:</strong> {service_request.request_id}</p>
-                        <p><strong>Category:</strong> {service_request.category.name if service_request.category else 'N/A'}</p>
-                        <p><strong>SubCategory:</strong> {service_request.subcategory.name if service_request.subcategory else 'N/A'}</p>
-                        <p><strong>Customer:</strong> {service_request.customer_name or 'Guest'}</p>
-                        <p><strong>Mobile:</strong> {service_request.mobile_number}</p>
-                        <p><strong>Address:</strong> {service_request.address}</p>
-                        <br>
-                        <p>Please login to the admin dashboard for more details.</p>
-                    </body>
-                </html>
-                """
-
-                to_email = ['gopinath.pramod@gmail.com']
-                email = EmailMessage(mail_subject, html_message, to=to_email)
-                email.content_subtype = "html"  # Main content is now text/html
-                email.send(fail_silently=False)
-                print(f"Email sent successfully to {to_email}")
-            except Exception as e:
-                print(f"Failed to send email: {e}")
-
+            # Send Email Asynchronously
+            email_thread = threading.Thread(target=send_admin_email_async, args=(service_request,))
+            email_thread.start()
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

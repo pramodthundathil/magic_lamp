@@ -70,11 +70,21 @@ class DeliveryAddressSerializer(serializers.ModelSerializer):
         
         return super().create(validated_data)
 
+
     def update(self, instance, validated_data):
         # Ensure only one primary address per user
         if validated_data.get("is_primary", False):
             DeliveryAddress.objects.filter(user=instance.user, is_primary=True).exclude(id=instance.id).update(is_primary=False)
         
         return super().update(instance, validated_data)
+
+
+from .models import AdminEmails
+
+class AdminEmailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminEmails
+        fields = '__all__'
+
 
 
