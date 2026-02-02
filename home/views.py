@@ -248,8 +248,7 @@ def generate_otp(request):
                     "success": False,
                     "message": "User does not exist",
                     "data": None
-                },
-                status=status.HTTP_404_NOT_FOUND
+                }
             )
 
     # Generate a 6-digit OTP
