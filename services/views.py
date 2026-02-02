@@ -55,6 +55,7 @@ def send_admin_email_async(service_request):
             </body>
         </html>
         """
+        print(admin_emails,"------------")
 
         email = EmailMessage(mail_subject, html_message, to=admin_emails)
         email.content_subtype = "html"

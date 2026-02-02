@@ -5,14 +5,14 @@ from home.serializers import CustomUserSerializer
 class ServiceSubCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceSubCategory
-        fields = ['id', 'category', 'name', 'image', 'service_charge', 'is_active']
+        fields = ['id', 'category', 'name', 'order', 'image', 'service_charge', 'is_active']
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
     subcategories = ServiceSubCategorySerializer(many=True, read_only=True)
 
     class Meta:
         model = ServiceCategory
-        fields = ['id', 'name', 'description', 'icon', 'image', 'service_charge', 'is_active', 'subcategories']
+        fields = ['id', 'name', 'description', 'order', 'icon', 'image', 'service_charge', 'is_active', 'subcategories']
 
 class ServiceRequestCreateSerializer(serializers.ModelSerializer):
     class Meta:
