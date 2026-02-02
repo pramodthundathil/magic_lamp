@@ -303,8 +303,8 @@ class AdminDashboardAnalyticsView(views.APIView):
             except ValueError:
                  return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            # Default to current month
-            start_date = today.replace(day=1)
+            # Default to past 30 days
+            start_date = today - datetime.timedelta(days=30)
             end_date = today
 
         # Base Querysets
