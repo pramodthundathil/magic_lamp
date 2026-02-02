@@ -264,3 +264,165 @@ class TrackRequestView(views.APIView):
                 {"detail": "Request not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+class AdminDashboardAnalyticsView(views.APIView):
+    """
+    Admin: Get dashboard analytics (Service Counts, User Growth, User Roles).
+    Supports ?start_date=YYYY-MM-DD&end_date=YYYY-MM-DD.
+    Defaults to current month if no dates are provided.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    @swagger_auto_schema(
+        operation_summary="Admin Dashboard Analytics",
+        operation_description="Returns analytics for Service Requests, User Growth, and User Roles.",
+        manual_parameters=[
+            openapi.Parameter('start_date', openapi.IN_QUERY, description="YYYY-MM-DD", type=openapi.TYPE_STRING),
+            openapi.Parameter('end_date', openapi.IN_QUERY, description="YYYY-MM-DD", type=openapi.TYPE_STRING),
+        ],
+        responses={200: "JSON Data"}
+    )
+    def get(self, request):
+        from django.utils import timezone
+        from .models import ServiceRequest
+        from home.models import CustomUser
+        from django.db.models import Count, Q
+        from django.db.models.functions import TruncDate
+        import datetime
+        from collections import defaultdict
+
+        # 1. Date Range Handling
+        today = timezone.now().date()
+        start_date_str = request.query_params.get('start_date')
+        end_date_str = request.query_params.get('end_date')
+
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d").date()
+                end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d").date()
+            except ValueError:
+                 return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            # Default to current month
+            start_date = today.replace(day=1)
+            end_date = today
+
+        # Base Querysets
+        requests_query = ServiceRequest.objects.filter(
+            created_at__date__gte=start_date,
+            created_at__date__lte=end_date
+        )
+
+        # 2. Service Request Analytics (Overall Summary)
+        request_summary = requests_query.aggregate(
+            total=Count('id'),
+            pending=Count('id', filter=Q(status='Pending')),
+            assigned=Count('id', filter=Q(status='Assigned')),
+            in_progress=Count('id', filter=Q(status='In Progress')),
+            completed=Count('id', filter=Q(status='Completed')),
+            cancelled=Count('id', filter=Q(status='Cancelled')),
+        )
+
+        # 3. 3D Analytics: Service Requests by Date & Status
+        # We want: [{date: '2023-01-01', status: 'Pending', count: 5}, ...]
+        sr_by_date = requests_query.annotate(
+            date=TruncDate('created_at')
+        ).values('date', 'status').annotate(
+            count=Count('id')
+        ).order_by('date')
+
+        # Transform to: { '2023-01-01': {'Pending': 5, 'Completed': 2} } for easier frontend consumption or keep flat
+        # Let's keep it flat structured but maybe grouped by date for charts
+        # Preferred Chart Structure: labels: [Dates], datasets: [{label: 'Pending', data: [...]}, ...]
+        # We will return the raw "by_date" list, frontend can pivot it.
+        sr_by_date_data = [
+            {
+                "date": item['date'].strftime("%Y-%m-%d"),
+                "status": item['status'],
+                "count": item['count']
+            }
+            for item in sr_by_date
+        ]
+
+        # 4. Category Analytics
+        # Summary (Pie Chart)
+        cat_summary = requests_query.values('category__name').annotate(count=Count('id')).order_by('-count')
+        cat_summary_data = [{"category": item['category__name'] or "Uncategorized", "count": item['count']} for item in cat_summary]
+
+        # By Date (Line Chart)
+        cat_by_date = requests_query.annotate(
+            date=TruncDate('created_at')
+        ).values('date', 'category__name').annotate(
+            count=Count('id')
+        ).order_by('date')
+
+        cat_by_date_data = [
+            {
+                "date": item['date'].strftime("%Y-%m-%d"),
+                "category": item['category__name'] or "Uncategorized",
+                "count": item['count']
+            }
+            for item in cat_by_date
+        ]
+
+        # 5. SubCategory Analytics
+        # Summary
+        subcat_summary = requests_query.values('subcategory__name').annotate(count=Count('id')).order_by('-count')
+        subcat_summary_data = [{"subcategory": item['subcategory__name'] or "None", "count": item['count']} for item in subcat_summary]
+
+        # By Date
+        subcat_by_date = requests_query.annotate(
+            date=TruncDate('created_at')
+        ).values('date', 'subcategory__name').annotate(
+            count=Count('id')
+        ).order_by('date')
+
+        subcat_by_date_data = [
+            {
+                "date": item['date'].strftime("%Y-%m-%d"),
+                "subcategory": item['subcategory__name'] or "None",
+                "count": item['count']
+            }
+            for item in subcat_by_date
+        ]
+
+        # 6. User Growth Analytics (unchanged logic)
+        user_growth_query = CustomUser.objects.filter(
+            date_joined__date__gte=start_date,
+            date_joined__date__lte=end_date
+        ).annotate(
+            date=TruncDate('date_joined')
+        ).values('date').annotate(
+            count=Count('id')
+        ).order_by('date')
+        
+        user_growth_data = [
+            {"date": item['date'].strftime("%Y-%m-%d"), "count": item['count']}
+            for item in user_growth_query
+        ]
+
+        # 7. User Roles (Snapshot)
+        user_roles_query = CustomUser.objects.values('role').annotate(count=Count('id')).order_by('role')
+        user_roles_data = [{"role": item['role'], "count": item['count']} for item in user_roles_query]
+
+        # Construct Response
+        data = {
+            "date_range": {
+                "start": start_date.strftime("%Y-%m-%d"),
+                "end": end_date.strftime("%Y-%m-%d")
+            },
+            "service_requests_summary": request_summary,
+            "service_requests_trend": sr_by_date_data,
+            "category_analytics": {
+                "summary": cat_summary_data,
+                "trend": cat_by_date_data
+            },
+            "subcategory_analytics": {
+                "summary": subcat_summary_data,
+                "trend": subcat_by_date_data
+            },
+            "user_growth": user_growth_data,
+            "user_roles_distribution": user_roles_data
+        }
+
+        return Response(data, status=status.HTTP_200_OK)

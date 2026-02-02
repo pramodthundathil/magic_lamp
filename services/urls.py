@@ -8,7 +8,8 @@ from .views import (
     CustomerServiceRequestView,
     TrackRequestView,
     AdminServiceRequestListView,
-    AdminServiceRequestUpdateView
+    AdminServiceRequestUpdateView,
+    AdminDashboardAnalyticsView
 )
 
 urlpatterns = [
@@ -24,4 +25,5 @@ urlpatterns = [
     path('admin/subcategories/<int:pk>/', AdminServiceSubCategoryDetailView.as_view(), name='admin-subcategory-detail'),
     path('admin/requests/', AdminServiceRequestListView.as_view(), name='admin-request-list'),
     path('admin/requests/<int:pk>/', AdminServiceRequestUpdateView.as_view(), name='admin-request-update'),
+    path('admin/dashboard-analytics/', AdminDashboardAnalyticsView.as_view(), name='admin-dashboard-analytics'),
 ]
