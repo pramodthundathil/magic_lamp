@@ -182,11 +182,17 @@ class AdminServiceRequestListView(generics.ListAPIView):
         queryset = ServiceRequest.objects.all()
         status_param = self.request.query_params.get('status')
         category_id = self.request.query_params.get('category_id')
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
 
         if status_param:
             queryset = queryset.filter(status__iexact=status_param)
         if category_id:
             queryset = queryset.filter(category_id=category_id)
+        if start_date:
+            queryset = queryset.filter(created_at__date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(created_at__date__lte=end_date)
         
         from django.db.models import Case, When, Value, IntegerField
         
@@ -201,6 +207,35 @@ class AdminServiceRequestListView(generics.ListAPIView):
                 output_field=IntegerField(),
             )
         ).order_by('status_priority', 'created_at')
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        
+        # Stats Aggregation (Respecting Date Filters, ignoring Status filters)
+        stats_queryset = ServiceRequest.objects.all()
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        
+        if start_date:
+            stats_queryset = stats_queryset.filter(created_at__date__gte=start_date)
+        if end_date:
+            stats_queryset = stats_queryset.filter(created_at__date__lte=end_date)
+            
+        from django.db.models import Count, Q
+        stats = stats_queryset.aggregate(
+            total=Count('id'),
+            pending=Count('id', filter=Q(status='Pending')),
+            assigned=Count('id', filter=Q(status='Assigned')),
+            in_progress=Count('id', filter=Q(status='In Progress')),
+            completed=Count('id', filter=Q(status='Completed')),
+            cancelled=Count('id', filter=Q(status='Cancelled')),
+        )
+        
+        # Inject stats into the response data (works for paginated responses which are dicts)
+        if isinstance(response.data, dict):
+            response.data['stats'] = stats
+            
+        return response
 
 class AdminServiceRequestUpdateView(generics.RetrieveUpdateAPIView):
     """
