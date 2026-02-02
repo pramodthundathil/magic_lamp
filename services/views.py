@@ -72,8 +72,14 @@ class ServiceCategoryListView(generics.ListAPIView):
     Publicly accessible.
     """
     permission_classes = [permissions.AllowAny]
-    queryset = ServiceCategory.objects.filter(is_active=True)
+    # queryset = ServiceCategory.objects.filter(is_active=True)
     serializer_class = ServiceCategorySerializer
+
+    def get_queryset(self):
+        from django.db.models import Prefetch
+        return ServiceCategory.objects.filter(is_active=True).order_by('order', 'name').prefetch_related(
+            Prefetch('subcategories', queryset=ServiceSubCategory.objects.filter(is_active=True).order_by('order', 'name'))
+        )
 
 class AdminServiceCategoryCreateView(generics.CreateAPIView):
     """
