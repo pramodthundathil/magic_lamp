@@ -171,10 +171,10 @@ class AdminServiceRequestListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsAdmin]
     serializer_class = ServiceRequestListSerializer
     pagination_class = StandardResultsSetPagination
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [filters.SearchFilter]
     search_fields = ['request_id', 'mobile_number', 'customer_name', 'status']
-    ordering_fields = ['created_at', 'status']
-    ordering = ['-created_at']
+     # ordering_fields = ['created_at', 'status']
+     # ordering = ['-created_at']
 
     def get_queryset(self):
         # Soft deleted items are automatically excluded by the Manager
@@ -188,7 +188,19 @@ class AdminServiceRequestListView(generics.ListAPIView):
         if category_id:
             queryset = queryset.filter(category_id=category_id)
         
-        return queryset
+        from django.db.models import Case, When, Value, IntegerField
+        
+        return queryset.annotate(
+            status_priority=Case(
+                When(status='Pending', then=Value(0)),
+                When(status='Assigned', then=Value(1)),
+                When(status='In Progress', then=Value(2)),
+                When(status='Completed', then=Value(3)),
+                When(status='Cancelled', then=Value(4)),
+                default=Value(5),
+                output_field=IntegerField(),
+            )
+        ).order_by('status_priority', 'created_at')
 
 class AdminServiceRequestUpdateView(generics.RetrieveUpdateAPIView):
     """
