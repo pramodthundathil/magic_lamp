@@ -14,6 +14,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import CustomUserSerializer, DeliveryAddressSerializer, UserProfileUpdateSerializer
 from .models import CustomUser
+from services.models import ServiceRequest
+from services.serializers import ServiceRequestListSerializer
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -761,7 +763,7 @@ class ListAllUsers(ListAPIView):
     """
     Admin can view the list of all registered users.
     """
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAuthenticated, IsAdmin]
     queryset = CustomUser.objects.all()
     serializer_class = CustomUserSerializer
 
@@ -771,6 +773,72 @@ class ListAllUsers(ListAPIView):
     )
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)
+
+
+class AdminUserDetailsView(APIView):
+    """
+    Admin can view detailed information of a specific user including their profile,
+    service requests, and analytics.
+    """
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    @swagger_auto_schema(
+        operation_description="Retrieve detailed information about a specific user. Admin only.",
+        responses={
+            200: openapi.Response(
+                description="User details with analytics and service requests.",
+                examples={
+                    "application/json": {
+                        "user": {
+                            "id": 1,
+                            "email": "user@example.com",
+                            "first_name": "John",
+                            "last_name": "Doe"
+                        },
+                        "analytics": {
+                            "total_requests": 5,
+                            "pending_requests": 2,
+                            "completed_requests": 3
+                        },
+                        "service_requests": [
+                            {
+                                "id": 1,
+                                "request_id": "SR-123",
+                                "status": "Pending"
+                            }
+                        ]
+                    }
+                }
+            ),
+            404: "User not found"
+        }
+    )
+    def get(self, request, pk):
+        user = get_object_or_404(CustomUser, pk=pk)
+        
+        # User details
+        user_serializer = CustomUserSerializer(user)
+        
+        # Service requests
+        service_requests = ServiceRequest.objects.filter(user=user).order_by('-created_at')
+        service_request_serializer = ServiceRequestListSerializer(service_requests, many=True)
+        
+        # Analytics
+        total_requests = service_requests.count()
+        pending_requests = service_requests.filter(status='Pending').count()
+        completed_requests = service_requests.filter(status='Completed').count()
+        
+        response_data = {
+            "user": user_serializer.data,
+            "analytics": {
+                "total_requests": total_requests,
+                "pending_requests": pending_requests,
+                "completed_requests": completed_requests
+            },
+            "service_requests": service_request_serializer.data
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
 
     
 

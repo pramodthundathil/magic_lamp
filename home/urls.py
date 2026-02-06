@@ -24,6 +24,7 @@ urlpatterns = [
     #user management
 
     path('admin/users/', views.ListAllUsers.as_view(), name='list-users'),
+    path('admin/user/<int:pk>/details/', views.AdminUserDetailsView.as_view(), name='admin-user-details'),
     path('admin/user/<int:user_id>/toggle-active/',  views.ToggleUserActiveStatus.as_view(), name='toggle-user-active'),
     path('admin/user/<int:user_id>/delete/',  views.DeleteUserByAdmin.as_view(), name='delete-user-by-admin'),
     path('user/delete/',  views.DeleteOwnAccount.as_view(), name='delete-own-account'),
