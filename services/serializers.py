@@ -18,7 +18,7 @@ class ServiceRequestCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceRequest
         fields = [
-            'id', 'mobile_number', 'customer_name', 'category', 'subcategory', 
+            'id', 'request_id', 'mobile_number', 'customer_name', 'category', 'subcategory', 
             'service_details', 'address', 'latitude', 'longitude'
         ]
 

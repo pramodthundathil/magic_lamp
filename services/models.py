@@ -95,12 +95,23 @@ class ServiceRequest(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.request_id:
-            # Generate unique ID: SR-TIMESTAMP-RANDOM
-            import time
-            import random
-            timestamp = int(time.time())
-            rand = random.randint(1000, 9999)
-            self.request_id = f"SR-{timestamp}-{rand}"
+            now = timezone.localtime(timezone.now())
+            # Format: SR-YYMMDDHHMM-XXXXX
+            # Example: SR-2602051330-00001
+            
+            date_str = now.strftime('%y%m%d')
+            time_str = now.strftime('%H%M')
+            
+            # Count requests created today to determine sequence
+            # We filter by ID prefix SR-YYMMDD to get the daily count
+            prefix_date = f"SR-{date_str}"
+            
+            # Use all_objects to include soft-deleted records in the sequence count
+            daily_count = ServiceRequest.all_objects.filter(request_id__startswith=prefix_date).count()
+            sequence = daily_count + 1
+            
+            self.request_id = f"{prefix_date}{time_str}-{sequence:05d}"
+            
         super().save(*args, **kwargs)
 
     def __str__(self):
