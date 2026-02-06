@@ -1,7 +1,7 @@
 from rest_framework import generics, status, permissions, views, filters
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from drf_yasg.utils import swagger_auto_schema
+from drf_yasg.utils import swagger_auto_schema, no_body
 from drf_yasg import openapi
 from .models import ServiceCategory, ServiceSubCategory, ServiceRequest
 from django.core.mail import EmailMessage
@@ -118,14 +118,85 @@ class AdminServiceSubCategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 # --- Customer Request Views ---
 
+from rest_framework.parsers import MultiPartParser, FormParser
+
 class CustomerServiceRequestView(views.APIView):
     permission_classes = [permissions.AllowAny]
+    parser_classes = [MultiPartParser, FormParser]
 
     @swagger_auto_schema(
         operation_summary="Submit a Service Request",
         operation_description="Guests and Users can submit requests. If authenticated, user is linked.",
-        request_body=ServiceRequestCreateSerializer,
-        responses={201: ServiceRequestCreateSerializer}
+        manual_parameters=[
+            openapi.Parameter(
+                name="images",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Items(type=openapi.TYPE_FILE),
+                description="Upload images (multiple supported)"
+            ),
+            openapi.Parameter(
+                name="audio",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_ARRAY,
+                items=openapi.Items(type=openapi.TYPE_FILE),
+                description="Upload audio files (multiple supported)"
+            ),
+            openapi.Parameter(
+                name="mobile_number",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+                description="Mobile Number"
+            ),
+            openapi.Parameter(
+                name="customer_name",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                description="Customer Name"
+            ),
+            openapi.Parameter(
+                name="category",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                required=True,
+                description="Category ID"
+            ),
+            openapi.Parameter(
+                name="subcategory",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_INTEGER,
+                description="SubCategory ID"
+            ),
+            openapi.Parameter(
+                name="address",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                required=True,
+                description="Address"
+            ),
+             openapi.Parameter(
+                name="service_details",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                description="JSON String of service details"
+            ),
+            openapi.Parameter(
+                name="latitude",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                description="Latitude"
+            ),
+            openapi.Parameter(
+                name="longitude",
+                in_=openapi.IN_FORM,
+                type=openapi.TYPE_STRING,
+                description="Longitude"
+            ),
+        ],
+        request_body=no_body,
+        responses={201: ServiceRequestCreateSerializer},
+        consumes=['multipart/form-data']
     )
     def post(self, request):
         serializer = ServiceRequestCreateSerializer(data=request.data, context={'request': request})
