@@ -11,7 +11,8 @@ from .views import (
     AdminServiceRequestUpdateView,
     AdminDashboardAnalyticsView,
     CustomerServiceRequestUpdateView,
-    CustomerServiceRequestMediaDeleteView
+    CustomerServiceRequestMediaDeleteView,
+    CustomerServiceRequestCancelView
 )
 
 urlpatterns = [
@@ -20,6 +21,7 @@ urlpatterns = [
     path('request/', CustomerServiceRequestView.as_view(), name='customer-request'),
     path('request/<int:pk>/edit/', CustomerServiceRequestUpdateView.as_view(), name='customer-request-edit'),
     path('request/media/<int:pk>/delete/', CustomerServiceRequestMediaDeleteView.as_view(), name='customer-media-delete'),
+    path('request/<int:pk>/cancel/', CustomerServiceRequestCancelView.as_view(), name='customer-request-cancel'),
     path('track/<str:request_id>/', TrackRequestView.as_view(), name='track-request'),
     
     # Admin

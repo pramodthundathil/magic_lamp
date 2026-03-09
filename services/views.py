@@ -334,6 +334,33 @@ class CustomerServiceRequestMediaDeleteView(generics.DestroyAPIView):
             raise ValidationError("Media can only be deleted for requests with 'Pending' status.")
         instance.delete()
 
+class CustomerServiceRequestCancelView(views.APIView):
+    """
+    Authenticated Users can cancel their own service requests if the status is 'Pending'.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_summary="Cancel My Service Request",
+        operation_description="Users can cancel their own requests if status is 'Pending'.",
+        responses={200: "Success Message", 400: "Error Message", 404: "Not Found"}
+    )
+    def post(self, request, pk):
+        try:
+            service_request = ServiceRequest.objects.get(pk=pk, user=request.user)
+        except ServiceRequest.DoesNotExist:
+            return Response({"detail": "Request not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if service_request.status != 'Pending':
+            return Response(
+                {"detail": "Only requests with 'Pending' status can be cancelled."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        service_request.status = 'Cancelled'
+        service_request.save()
+        return Response({"detail": "Request cancelled successfully."}, status=status.HTTP_200_OK)
+
 # --- Admin Request Views ---
 
 class StandardResultsSetPagination(PageNumberPagination):
