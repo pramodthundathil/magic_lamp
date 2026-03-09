@@ -30,7 +30,7 @@ class ServiceRequestCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceRequest
         fields = [
-            'id', 'request_id', 'mobile_number', 'customer_name', 'category', 'subcategory', 
+            'id', 'request_id', 'mobile_number', 'email', 'customer_name', 'category', 'subcategory', 
             'service_details', 'address', 'latitude', 'longitude', 'images', 'audio'
         ]
 
@@ -105,3 +105,38 @@ class ServiceRequestAdminSerializer(serializers.ModelSerializer):
             'service_details', 'address', 'latitude', 'longitude',
             'created_at', 'media_files'
         ]
+
+class ServiceRequestUpdateSerializer(serializers.ModelSerializer):
+    images = serializers.ListField(
+        child=serializers.FileField(), required=False, write_only=True
+    )
+    audio = serializers.ListField(
+        child=serializers.FileField(), required=False, write_only=True
+    )
+
+    class Meta:
+        model = ServiceRequest
+        fields = [
+            'id', 'request_id', 'mobile_number', 'email', 'customer_name', 
+            'service_details', 'address', 'latitude', 'longitude', 'images', 'audio'
+        ]
+        read_only_fields = ['id', 'request_id']
+
+    def update(self, instance, validated_data):
+        images = validated_data.pop('images', [])
+        audio = validated_data.pop('audio', [])
+
+        instance = super().update(instance, validated_data)
+
+        # Append new Media Objects
+        for image in images:
+            ServiceRequestMedia.objects.create(
+                service_request=instance, file=image, file_type='image'
+            )
+        
+        for audio_file in audio:
+            ServiceRequestMedia.objects.create(
+                service_request=instance, file=audio_file, file_type='audio'
+            )
+
+        return instance

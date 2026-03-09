@@ -3,7 +3,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from drf_yasg.utils import swagger_auto_schema, no_body
 from drf_yasg import openapi
-from .models import ServiceCategory, ServiceSubCategory, ServiceRequest
+from .models import ServiceCategory, ServiceSubCategory, ServiceRequest, ServiceRequestMedia
 from django.core.mail import EmailMessage
 from django.conf import settings
 from .serializers import (
@@ -11,7 +11,8 @@ from .serializers import (
     ServiceSubCategorySerializer,
     ServiceRequestCreateSerializer, 
     ServiceRequestListSerializer,
-    ServiceRequestAdminSerializer
+    ServiceRequestAdminSerializer,
+    ServiceRequestUpdateSerializer
 )
 from rest_framework.permissions import IsAuthenticated
 import threading
@@ -196,7 +197,7 @@ class CustomerServiceRequestView(views.APIView):
             ),
         ],
         request_body=no_body,
-        responses={201: ServiceRequestCreateSerializer},
+        responses={201: ServiceRequestListSerializer},
         consumes=['multipart/form-data']
     )
     def post(self, request):
@@ -226,6 +227,112 @@ class CustomerServiceRequestView(views.APIView):
         requests = ServiceRequest.objects.filter(user=request.user).order_by('-created_at')
         serializer = ServiceRequestListSerializer(requests, many=True)
         return Response(serializer.data)
+
+class CustomerServiceRequestUpdateView(generics.UpdateAPIView):
+    """
+    Authenticated Users can edit their own service requests if the status is 'Pending'.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = ServiceRequestUpdateSerializer
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return ServiceRequest.objects.none()
+        return ServiceRequest.objects.filter(user=self.request.user)
+
+    @swagger_auto_schema(
+        operation_summary="Update My Service Request (Full)",
+        operation_description="Users can edit their own requests if status is 'Pending'.",
+        manual_parameters=[
+            openapi.Parameter(
+                name="images", in_=openapi.IN_FORM, type=openapi.TYPE_ARRAY,
+                items=openapi.Items(type=openapi.TYPE_FILE), description="Upload images"
+            ),
+            openapi.Parameter(
+                name="audio", in_=openapi.IN_FORM, type=openapi.TYPE_ARRAY,
+                items=openapi.Items(type=openapi.TYPE_FILE), description="Upload audio"
+            ),
+            openapi.Parameter(name="mobile_number", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="email", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="customer_name", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="service_details", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="address", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="latitude", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="longitude", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+        ],
+        request_body=no_body,
+        responses={200: ServiceRequestListSerializer},
+        consumes=['multipart/form-data']
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Edit My Service Request (Partial)",
+        operation_description="Users can edit their own requests if status is 'Pending'.",
+        manual_parameters=[
+            openapi.Parameter(
+                name="images", in_=openapi.IN_FORM, type=openapi.TYPE_ARRAY,
+                items=openapi.Items(type=openapi.TYPE_FILE), description="Upload images"
+            ),
+            openapi.Parameter(
+                name="audio", in_=openapi.IN_FORM, type=openapi.TYPE_ARRAY,
+                items=openapi.Items(type=openapi.TYPE_FILE), description="Upload audio"
+            ),
+            openapi.Parameter(name="mobile_number", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="email", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="customer_name", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="service_details", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="address", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="latitude", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+            openapi.Parameter(name="longitude", in_=openapi.IN_FORM, type=openapi.TYPE_STRING),
+        ],
+        request_body=no_body,
+        responses={200: ServiceRequestListSerializer},
+        consumes=['multipart/form-data']
+    )
+    def patch(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        if instance.status != 'Pending':
+            return Response(
+                {"detail": "Only requests with 'Pending' status can be edited."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+class CustomerServiceRequestMediaDeleteView(generics.DestroyAPIView):
+    """
+    Authenticated Users can delete media from their own service requests if the status is 'Pending'.
+    """
+    permission_classes = [IsAuthenticated]
+    queryset = ServiceRequestMedia.objects.all()
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return ServiceRequestMedia.objects.none()
+        return ServiceRequestMedia.objects.filter(service_request__user=self.request.user)
+
+    def perform_destroy(self, instance):
+        if instance.service_request.status != 'Pending':
+            from rest_framework.exceptions import ValidationError
+            raise ValidationError("Media can only be deleted for requests with 'Pending' status.")
+        instance.delete()
 
 # --- Admin Request Views ---
 

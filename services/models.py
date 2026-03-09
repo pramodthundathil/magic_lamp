@@ -66,6 +66,7 @@ class ServiceRequest(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='service_requests', null=True, blank=True)
     # Contact info - mandatory even for registered users as they might book for others
     mobile_number = models.CharField(max_length=15)
+    email = models.EmailField(blank=True, null=True)
     customer_name = models.CharField(max_length=100, blank=True, null=True)
     
     category = models.ForeignKey(ServiceCategory, on_delete=models.SET_NULL, null=True, related_name='requests')

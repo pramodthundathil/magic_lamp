@@ -9,13 +9,17 @@ from .views import (
     TrackRequestView,
     AdminServiceRequestListView,
     AdminServiceRequestUpdateView,
-    AdminDashboardAnalyticsView
+    AdminDashboardAnalyticsView,
+    CustomerServiceRequestUpdateView,
+    CustomerServiceRequestMediaDeleteView
 )
 
 urlpatterns = [
     # Public / Customer
     path('categories/', ServiceCategoryListView.as_view(), name='category-list'),
     path('request/', CustomerServiceRequestView.as_view(), name='customer-request'),
+    path('request/<int:pk>/edit/', CustomerServiceRequestUpdateView.as_view(), name='customer-request-edit'),
+    path('request/media/<int:pk>/delete/', CustomerServiceRequestMediaDeleteView.as_view(), name='customer-media-delete'),
     path('track/<str:request_id>/', TrackRequestView.as_view(), name='track-request'),
     
     # Admin
