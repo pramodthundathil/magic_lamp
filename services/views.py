@@ -74,6 +74,7 @@ class ServiceCategoryListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
     # queryset = ServiceCategory.objects.filter(is_active=True)
     serializer_class = ServiceCategorySerializer
+    pagination_class = None
 
     def get_queryset(self):
         from django.db.models import Prefetch
