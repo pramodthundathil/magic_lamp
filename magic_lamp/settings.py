@@ -283,7 +283,7 @@ GOOGLE_CLIENT_ID = "752728323430-rig6042403v1vriivoh0hmffsl3nv4bs.apps.googleuse
 GOOGLE_ANDROID_CLIENT_ID = "752728323430-907p1i7bqan7vd92ba7ih5jlvkoh825i.apps.googleusercontent.com"
 
 # iOS client ID — replace with your actual iOS client ID from Google Cloud Console
-GOOGLE_IOS_CLIENT_ID = "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com"
+GOOGLE_IOS_CLIENT_ID = "752728323430-fai7136i4bd2f1mhul64hqv7r0o5djj1.apps.googleusercontent.com"
 
 # All allowed audiences — includes web, android, and ios client IDs
 GOOGLE_ALLOWED_CLIENT_IDS = [
