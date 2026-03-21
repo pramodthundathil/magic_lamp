@@ -276,5 +276,18 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ['email', 'profile']    # Permissions to reque
 SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'http://localhost:8000/auth/google/callback/'
 
 # Google OAuth2 settings
+# Web client ID — used by the Django backend to verify ID tokens (audience check)
 GOOGLE_CLIENT_ID = "752728323430-rig6042403v1vriivoh0hmffsl3nv4bs.apps.googleusercontent.com"
 
+# Android client ID — tokens from Android app will have this as audience
+GOOGLE_ANDROID_CLIENT_ID = "752728323430-907p1i7bqan7vd92ba7ih5jlvkoh825i.apps.googleusercontent.com"
+
+# iOS client ID — replace with your actual iOS client ID from Google Cloud Console
+GOOGLE_IOS_CLIENT_ID = "YOUR_IOS_CLIENT_ID.apps.googleusercontent.com"
+
+# All allowed audiences — includes web, android, and ios client IDs
+GOOGLE_ALLOWED_CLIENT_IDS = [
+    GOOGLE_CLIENT_ID,
+    GOOGLE_ANDROID_CLIENT_ID,
+    GOOGLE_IOS_CLIENT_ID,
+]

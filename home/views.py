@@ -132,14 +132,28 @@ class GoogleAuthView(APIView):
             return Response({"error": "Token is required"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # Verify token with Google
-            google_info = id_token.verify_oauth2_token(
-                token, 
-                requests.Request(), 
-                settings.GOOGLE_CLIENT_ID
-            )
+            # Try verifying the token against each allowed client ID
+            # (Android, iOS and Web produce tokens with different 'aud' values)
+            allowed_client_ids = getattr(settings, 'GOOGLE_ALLOWED_CLIENT_IDS', [settings.GOOGLE_CLIENT_ID])
+            google_info = None
+            last_error = None
+            req = requests.Request()
 
-            # Check if the token is expired
+            for client_id in allowed_client_ids:
+                try:
+                    google_info = id_token.verify_oauth2_token(token, req, client_id)
+                    break  # Verified successfully — stop trying
+                except ValueError as e:
+                    last_error = e
+                    continue
+
+            if google_info is None:
+                return Response(
+                    {"error": f"Invalid Google token: {str(last_error)}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Check token issuer
             if google_info['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
                 return Response({"error": "Wrong issuer"}, status=status.HTTP_400_BAD_REQUEST)
 
